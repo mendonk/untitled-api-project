@@ -7,18 +7,49 @@ The FastAPI server is an interface to the database.
 
 1. To start the frontend server, use the script (for now) at root.
 
-```bash
-python3 start_api.py &
-```
+    ```bash
+    python3 start_api.py &
+    ```
 
 2. To verify startup, run a health check:
+    
+    ```bash
+    curl http://localhost:8000/health
+    
+    # Returns
+    {"status":"healthy","timestamp":"2025-08-26T03:40:00.143544"}
+    ```
 
-```bash
-curl http://localhost:8000/health
+3. Send a request to the `/wines` endpoint, which queries the connected database.
 
-# Returns
-{"status":"healthy","timestamp":"2025-08-26T03:40:00.143544"}
-```
+    ```
+    curl -s http://localhost:8000/wines
+    [
+      {
+        "id": "5fb654a4-e9e4-49e1-90b3-229be38e39ff",
+        "name": "Château Margaux",
+        "vintage": 2015,
+        "region_id": "fc0b1779-323f-47ce-b926-b32c9af65d19",
+        "grape_variety": "Cabernet Sauvignon Blend",
+        "winery": "Château Margaux",
+        "alcohol_percentage": 13.5,
+        "price": 1500,
+        "description": "Exceptional vintage with complex aromas",
+        "created_at": "2025-08-26T01:32:42.774277Z",
+        "updated_at": "2025-08-26T01:32:42.774277Z",
+        "region": {
+          "id": "fc0b1779-323f-47ce-b926-b32c9af65d19",
+          "name": "Bordeaux",
+          "country": "France",
+          "description": "Famous wine region known for red blends",
+          "climate": "Maritime",
+          "soil_type": "Gravel and clay",
+          "created_at": "2025-08-26T01:32:42.744880Z",
+          "updated_at": "2025-08-26T01:32:42.744880Z"
+        }
+      },
+      ...
+    ```
 
 ## Wines database
 
