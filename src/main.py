@@ -6,7 +6,8 @@ from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
 import uuid
@@ -36,8 +37,8 @@ class User(Base):
     first_name = Column(String(100))
     last_name = Column(String(100))
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class WineRegion(Base):
     __tablename__ = "wine_regions"
@@ -48,8 +49,8 @@ class WineRegion(Base):
     description = Column(Text)
     climate = Column(String(100))
     soil_type = Column(String(100))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class Wine(Base):
     __tablename__ = "wines"
@@ -114,7 +115,7 @@ class WineRegionCreate(BaseModel):
     soil_type: Optional[str] = None
 
 class WineRegionResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     name: str
     country: str
     description: Optional[str]
@@ -129,7 +130,7 @@ class WineRegionResponse(BaseModel):
 class WineCreate(BaseModel):
     name: str
     vintage: int
-    region_id: str
+    region_id: uuid.UUID
     grape_variety: Optional[str] = None
     winery: Optional[str] = None
     alcohol_percentage: Optional[float] = None
@@ -137,10 +138,10 @@ class WineCreate(BaseModel):
     description: Optional[str] = None
 
 class WineResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     name: str
     vintage: int
-    region_id: str
+    region_id: uuid.UUID
     grape_variety: Optional[str]
     winery: Optional[str]
     alcohol_percentage: Optional[float]
@@ -154,8 +155,8 @@ class WineResponse(BaseModel):
         from_attributes = True
 
 class UserWineCreate(BaseModel):
-    user_id: str
-    wine_id: str
+    user_id: uuid.UUID
+    wine_id: uuid.UUID
     quantity: int = 1
     purchase_date: Optional[datetime] = None
     purchase_price: Optional[float] = None
@@ -164,9 +165,9 @@ class UserWineCreate(BaseModel):
     rating: Optional[int] = Field(None, ge=1, le=5)
 
 class UserWineResponse(BaseModel):
-    id: str
-    user_id: str
-    wine_id: str
+    id: uuid.UUID
+    user_id: uuid.UUID
+    wine_id: uuid.UUID
     quantity: int
     purchase_date: Optional[datetime]
     purchase_price: Optional[float]
@@ -181,8 +182,8 @@ class UserWineResponse(BaseModel):
         from_attributes = True
 
 class WineTastingCreate(BaseModel):
-    user_id: str
-    wine_id: str
+    user_id: uuid.UUID
+    wine_id: uuid.UUID
     tasting_date: datetime
     rating: Optional[int] = Field(None, ge=1, le=5)
     notes: Optional[str] = None
@@ -192,9 +193,9 @@ class WineTastingCreate(BaseModel):
     overall_impression: Optional[str] = None
 
 class WineTastingResponse(BaseModel):
-    id: str
-    user_id: str
-    wine_id: str
+    id: uuid.UUID
+    user_id: uuid.UUID
+    wine_id: uuid.UUID
     tasting_date: datetime
     rating: Optional[int]
     notes: Optional[str]
@@ -241,7 +242,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.utcnow()}
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc)}
 
 # Wine Regions endpoints
 @app.get("/regions", response_model=List[WineRegionResponse])
