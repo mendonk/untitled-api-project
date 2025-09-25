@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "api-monitor-agent"
+version = "1.0.0"
+description = "A lightweight AI agent for monitoring APIs and detecting changes"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Monitoring",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "requests>=2.31.0",
+    "pydantic>=2.5.0",
+    "python-dotenv>=1.0.0",
+    "schedule>=1.2.0",
+    "aiohttp>=3.8.0",
+    "rich>=13.0.0",
+    "click>=8.0.0",
+    "pyyaml>=6.0",
+    "jsonschema>=4.0.0",
+    "deepdiff>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.10.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+
+[project.scripts]
+api-monitor = "api_monitor_agent.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/api-monitor-agent"
+Documentation = "https://api-monitor-agent.readthedocs.io"
+Repository = "https://github.com/yourusername/api-monitor-agent"
+Issues = "https://github.com/yourusername/api-monitor-agent/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
