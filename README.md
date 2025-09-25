@@ -5,7 +5,7 @@ A wine management application for testing agents and APIs.
 
 The FastAPI server is an interface to the database.
 
-1. To start the frontenv server, use the script (for now) at root.
+1. To start the frontend server, use the script (for now) at root.
 
     ```bash
     python3 start_api.py &

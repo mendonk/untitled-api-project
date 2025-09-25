@@ -11,9 +11,9 @@ if __name__ == "__main__":
     print("🔍 Interactive API explorer at: http://localhost:8000/redoc")
     print("🌐 API base URL: http://localhost:8000")
     print("\nPress Ctrl+C to stop the server")
-    
+
     uvicorn.run(
-        "src.main:app",
+        "main:app",
         host="0.0.0.0",
         port=8000,
         reload=False,  # Temporarily disable auto-reload
