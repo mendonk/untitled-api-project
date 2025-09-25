@@ -1,23 +1,35 @@
+"""Wine Management API - FastAPI application for managing wine collections."""
+
+import os
+import uuid
+from datetime import datetime, timezone
+from typing import List, Optional
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, String, Integer, Float, Text, Boolean, DateTime, ForeignKey, CheckConstraint, UniqueConstraint
+from pydantic import BaseModel, Field
+from sqlalchemy import (
+    create_engine,
+    Column,
+    String,
+    Integer,
+    Float,
+    Text,
+    Boolean,
+    DateTime,
+    ForeignKey,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy.dialects.postgresql import UUID
-from pydantic import BaseModel, Field
-from typing import List, Optional
-import uuid
-from datetime import datetime, timezone
-import os
-from dotenv import load_dotenv
-import uuid
 
 # Load environment variables
 load_dotenv()
 
 # Database configuration
 DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
+    "DATABASE_URL",
     "postgresql://postgres:postgres@localhost:5432/untitled_api_db"
 )
 
@@ -28,8 +40,10 @@ Base = declarative_base()
 
 # Database Models
 class User(Base):
+    """User model for the wine management system."""
+
     __tablename__ = "users"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
@@ -38,11 +52,18 @@ class User(Base):
     last_name = Column(String(100))
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
 
 class WineRegion(Base):
+    """Wine region model for storing wine region information."""
+
     __tablename__ = "wine_regions"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), unique=True, nullable=False)
     country = Column(String(100), nullable=False)
@@ -50,28 +71,42 @@ class WineRegion(Base):
     climate = Column(String(100))
     soil_type = Column(String(100))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
 
 class Wine(Base):
+    """Wine model for storing wine information."""
+
     __tablename__ = "wines"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     vintage = Column(Integer, nullable=False)
-    region_id = Column(UUID(as_uuid=True), ForeignKey("wine_regions.id"), nullable=False)
+    region_id = Column(
+        UUID(as_uuid=True), ForeignKey("wine_regions.id"), nullable=False
+    )
     grape_variety = Column(String(255))
     winery = Column(String(255))
     alcohol_percentage = Column(Float)
     price = Column(Float)
     description = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
     region = relationship("WineRegion")
 
+
 class UserWine(Base):
+    """User wine collection model for storing user wine inventory."""
+
     __tablename__ = "user_wines"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     wine_id = Column(UUID(as_uuid=True), ForeignKey("wines.id"), nullable=False)
@@ -82,14 +117,19 @@ class UserWine(Base):
     notes = Column(Text)
     rating = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
     user = relationship("User")
     wine = relationship("Wine")
 
+
 class WineTasting(Base):
+    """Wine tasting model for storing tasting notes and ratings."""
+
     __tablename__ = "wine_tastings"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     wine_id = Column(UUID(as_uuid=True), ForeignKey("wines.id"), nullable=False)
@@ -101,20 +141,27 @@ class WineTasting(Base):
     finish_notes = Column(Text)
     overall_impression = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
     user = relationship("User")
     wine = relationship("Wine")
 
 # Pydantic models for API
 class WineRegionCreate(BaseModel):
+    """Pydantic model for creating wine regions."""
+
     name: str
     country: str
     description: Optional[str] = None
     climate: Optional[str] = None
     soil_type: Optional[str] = None
 
+
 class WineRegionResponse(BaseModel):
+    """Pydantic model for wine region responses."""
+
     id: uuid.UUID
     name: str
     country: str
@@ -123,11 +170,15 @@ class WineRegionResponse(BaseModel):
     soil_type: Optional[str]
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
+        """Configuration for the model."""
         from_attributes = True
 
+
 class WineCreate(BaseModel):
+    """Pydantic model for creating wines."""
+
     name: str
     vintage: int
     region_id: uuid.UUID
@@ -137,7 +188,10 @@ class WineCreate(BaseModel):
     price: Optional[float] = None
     description: Optional[str] = None
 
+
 class WineResponse(BaseModel):
+    """Pydantic model for wine responses."""
+
     id: uuid.UUID
     name: str
     vintage: int
@@ -150,11 +204,15 @@ class WineResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     region: WineRegionResponse
-    
+
     class Config:
+        """Configuration for the model."""
         from_attributes = True
 
+
 class UserWineCreate(BaseModel):
+    """Pydantic model for creating user wine entries."""
+
     user_id: uuid.UUID
     wine_id: uuid.UUID
     quantity: int = 1
@@ -164,7 +222,10 @@ class UserWineCreate(BaseModel):
     notes: Optional[str] = None
     rating: Optional[int] = Field(None, ge=1, le=5)
 
+
 class UserWineResponse(BaseModel):
+    """Pydantic model for user wine responses."""
+
     id: uuid.UUID
     user_id: uuid.UUID
     wine_id: uuid.UUID
@@ -177,11 +238,15 @@ class UserWineResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     wine: WineResponse
-    
+
     class Config:
+        """Configuration for the model."""
         from_attributes = True
 
+
 class WineTastingCreate(BaseModel):
+    """Pydantic model for creating wine tastings."""
+
     user_id: uuid.UUID
     wine_id: uuid.UUID
     tasting_date: datetime
@@ -192,7 +257,10 @@ class WineTastingCreate(BaseModel):
     finish_notes: Optional[str] = None
     overall_impression: Optional[str] = None
 
+
 class WineTastingResponse(BaseModel):
+    """Pydantic model for wine tasting responses."""
+
     id: uuid.UUID
     user_id: uuid.UUID
     wine_id: uuid.UUID
@@ -206,12 +274,14 @@ class WineTastingResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     wine: WineResponse
-    
+
     class Config:
+        """Configuration for the model."""
         from_attributes = True
 
 # Database dependency
 def get_db():
+    """Get database session dependency."""
     db = SessionLocal()
     try:
         yield db
@@ -238,27 +308,35 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
+    """Root endpoint returning API information."""
     return {"message": "Wine Management API", "version": "1.0.0"}
+
 
 @app.get("/health")
 async def health_check():
+    """Health check endpoint."""
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc)}
 
 # Wine Regions endpoints
 @app.get("/regions", response_model=List[WineRegionResponse])
 async def get_regions(db: Session = Depends(get_db)):
+    """Get all wine regions."""
     regions = db.query(WineRegion).all()
     return regions
 
+
 @app.get("/regions/{region_id}", response_model=WineRegionResponse)
 async def get_region(region_id: str, db: Session = Depends(get_db)):
+    """Get a specific wine region by ID."""
     region = db.query(WineRegion).filter(WineRegion.id == region_id).first()
     if not region:
         raise HTTPException(status_code=404, detail="Region not found")
     return region
 
+
 @app.post("/regions", response_model=WineRegionResponse, status_code=status.HTTP_201_CREATED)
 async def create_region(region: WineRegionCreate, db: Session = Depends(get_db)):
+    """Create a new wine region."""
     db_region = WineRegion(**region.dict())
     db.add(db_region)
     db.commit()
@@ -268,26 +346,31 @@ async def create_region(region: WineRegionCreate, db: Session = Depends(get_db))
 # Wines endpoints
 @app.get("/wines", response_model=List[WineResponse])
 async def get_wines(
-    skip: int = 0, 
-    limit: int = 100, 
+    skip: int = 0,
+    limit: int = 100,
     region_id: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    """Get wines with optional filtering by region."""
     query = db.query(Wine)
     if region_id:
         query = query.filter(Wine.region_id == region_id)
     wines = query.offset(skip).limit(limit).all()
     return wines
 
+
 @app.get("/wines/{wine_id}", response_model=WineResponse)
 async def get_wine(wine_id: str, db: Session = Depends(get_db)):
+    """Get a specific wine by ID."""
     wine = db.query(Wine).filter(Wine.id == wine_id).first()
     if not wine:
         raise HTTPException(status_code=404, detail="Wine not found")
     return wine
 
+
 @app.post("/wines", response_model=WineResponse, status_code=status.HTTP_201_CREATED)
 async def create_wine(wine: WineCreate, db: Session = Depends(get_db)):
+    """Create a new wine."""
     db_wine = Wine(**wine.dict())
     db.add(db_wine)
     db.commit()
@@ -297,11 +380,16 @@ async def create_wine(wine: WineCreate, db: Session = Depends(get_db)):
 # User Wines endpoints
 @app.get("/users/{user_id}/wines", response_model=List[UserWineResponse])
 async def get_user_wines(user_id: str, db: Session = Depends(get_db)):
+    """Get wines for a specific user."""
     user_wines = db.query(UserWine).filter(UserWine.user_id == user_id).all()
     return user_wines
 
+
 @app.post("/users/{user_id}/wines", response_model=UserWineResponse, status_code=status.HTTP_201_CREATED)
-async def add_user_wine(user_id: str, user_wine: UserWineCreate, db: Session = Depends(get_db)):
+async def add_user_wine(
+    user_id: str, user_wine: UserWineCreate, db: Session = Depends(get_db)
+):
+    """Add a wine to a user's collection."""
     user_wine_data = user_wine.dict()
     user_wine_data["user_id"] = user_id
     db_user_wine = UserWine(**user_wine_data)
@@ -313,11 +401,16 @@ async def add_user_wine(user_id: str, user_wine: UserWineCreate, db: Session = D
 # Wine Tastings endpoints
 @app.get("/users/{user_id}/tastings", response_model=List[WineTastingResponse])
 async def get_user_tastings(user_id: str, db: Session = Depends(get_db)):
+    """Get tastings for a specific user."""
     tastings = db.query(WineTasting).filter(WineTasting.user_id == user_id).all()
     return tastings
 
+
 @app.post("/users/{user_id}/tastings", response_model=WineTastingResponse, status_code=status.HTTP_201_CREATED)
-async def create_tasting(user_id: str, tasting: WineTastingCreate, db: Session = Depends(get_db)):
+async def create_tasting(
+    user_id: str, tasting: WineTastingCreate, db: Session = Depends(get_db)
+):
+    """Create a new wine tasting for a user."""
     tasting_data = tasting.dict()
     tasting_data["user_id"] = user_id
     db_tasting = WineTasting(**tasting_data)
@@ -334,17 +427,19 @@ async def search_wines(
     region: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    """Search wines by name, vintage, or region."""
     query = db.query(Wine).join(WineRegion)
-    
+
     if name:
         query = query.filter(Wine.name.ilike(f"%{name}%"))
     if vintage:
         query = query.filter(Wine.vintage == vintage)
     if region:
         query = query.filter(WineRegion.name.ilike(f"%{region}%"))
-    
+
     wines = query.all()
     return wines
+
 
 if __name__ == "__main__":
     import uvicorn
