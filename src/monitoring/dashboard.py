@@ -4,15 +4,15 @@ Simple web dashboard for the monitoring application
 This provides a web interface to view monitoring data and AI insights.
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 import asyncio
 import json
-import aiohttp
-from datetime import datetime
-from typing import List, Dict, Any
 import logging
+from datetime import datetime
+from typing import List
+
+import aiohttp
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 
 from .monitor import APIMonitor
 from .config import config
@@ -40,13 +40,13 @@ async def start_monitoring_background():
             timeout=aiohttp.ClientTimeout(total=monitor_instance.timeout)
         )
         monitor_instance.monitoring_active = True
-        
+
         try:
             while monitor_instance.monitoring_active:
                 await monitor_instance._monitor_endpoints()
                 await asyncio.sleep(monitor_instance.check_interval)
         except Exception as e:
-            logger.error(f"Background monitoring error: {e}")
+            logger.error("Background monitoring error: %s", e)
         finally:
             if monitor_instance.session:
                 await monitor_instance.session.close()
@@ -64,9 +64,9 @@ async def startup_event():
         "error_rate_threshold": config.get("monitoring_agent.error_rate_threshold", 0.05),
         "anomaly_sensitivity": config.get("monitoring_agent.anomaly_sensitivity", 2.0)
     }
-    
+
     monitor_instance = APIMonitor(api_url, monitor_config)
-    
+
     # Start monitoring in the background
     asyncio.create_task(start_monitoring_background())
     logger.info("Dashboard started")
@@ -190,11 +190,11 @@ async def dashboard():
                 <h1>🍷 Wine API Monitoring Dashboard</h1>
                 <p>Real-time monitoring with analytics and insights</p>
             </div>
-            
+
             <div class="refresh-indicator" id="refreshIndicator">
                 Last updated: <span id="lastUpdate">--</span>
             </div>
-            
+
             <div class="grid">
                 <div class="card">
                     <h3>Health Status</h3>
@@ -221,7 +221,7 @@ async def dashboard():
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <h3>Endpoint Performance</h3>
                     <table class="endpoint-table" id="endpointTable">
@@ -237,14 +237,14 @@ async def dashboard():
                         </tbody>
                     </table>
                 </div>
-                
+
                 <div class="card">
                     <h3>Recent Alerts</h3>
                     <div id="alertsContainer">
                         <p>Loading alerts...</p>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <h3>Analytics Insights</h3>
                     <div id="insightsContainer">
@@ -253,42 +253,42 @@ async def dashboard():
                 </div>
             </div>
         </div>
-        
+
         <script>
             let ws;
             let reconnectInterval;
-            
+
             function connectWebSocket() {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const wsUrl = `${protocol}//${window.location.host}/ws`;
-                
+
                 ws = new WebSocket(wsUrl);
-                
+
                 ws.onopen = function(event) {
                     console.log('WebSocket connected');
                     document.getElementById('refreshIndicator').style.backgroundColor = '#28a745';
                 };
-                
+
                 ws.onmessage = function(event) {
                     const data = JSON.parse(event.data);
                     updateDashboard(data);
                 };
-                
+
                 ws.onclose = function(event) {
                     console.log('WebSocket disconnected');
                     document.getElementById('refreshIndicator').style.backgroundColor = '#dc3545';
-                    
+
                     // Attempt to reconnect
                     if (!reconnectInterval) {
                         reconnectInterval = setInterval(connectWebSocket, 5000);
                     }
                 };
-                
+
                 ws.onerror = function(error) {
                     console.error('WebSocket error:', error);
                 };
             }
-            
+
             function updateDashboard(data) {
                 // Update health status
                 document.getElementById('status').textContent = data.health_summary.status;
@@ -297,18 +297,18 @@ async def dashboard():
                 document.getElementById('avgResponseTime').textContent = `${data.health_summary.avg_response_time.toFixed(3)}s`;
                 document.getElementById('errorRate').textContent = `${(data.health_summary.error_rate * 100).toFixed(1)}%`;
                 document.getElementById('activeAlerts').textContent = data.health_summary.active_alerts;
-                
+
                 // Update endpoint table
                 const tbody = document.getElementById('endpointTableBody');
                 tbody.innerHTML = '';
-                
+
                 for (const [endpoint, metrics] of Object.entries(data.baseline_metrics)) {
                     const row = tbody.insertRow();
                     row.insertCell(0).textContent = endpoint;
                     row.insertCell(1).textContent = `${metrics.avg_response_time.toFixed(3)}s`;
                     row.insertCell(2).textContent = `${(metrics.success_rate * 100).toFixed(1)}%`;
                 }
-                
+
                 // Update alerts
                 const alertsContainer = document.getElementById('alertsContainer');
                 if (data.recent_alerts && data.recent_alerts.length > 0) {
@@ -326,7 +326,7 @@ async def dashboard():
                 } else {
                     alertsContainer.innerHTML = '<p style="color: green;">No recent alerts</p>';
                 }
-                
+
                 // Update insights
                 const insightsContainer = document.getElementById('insightsContainer');
                 if (data.health_summary.insights && data.health_summary.insights.length > 0) {
@@ -340,11 +340,11 @@ async def dashboard():
                 } else {
                     insightsContainer.innerHTML = '<p>No analytics available</p>';
                 }
-                
+
                 // Update last update time
                 document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
             }
-            
+
             // Connect on page load
             connectWebSocket();
         </script>
@@ -359,22 +359,22 @@ async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time updates"""
     await websocket.accept()
     connected_clients.append(websocket)
-    
+
     try:
         while True:
             if monitor_instance:
                 # Get current status
                 status_report = monitor_instance.get_status_report()
-                
+
                 # Send to client
                 await websocket.send_text(json.dumps(status_report, default=str))
-            
+
             await asyncio.sleep(config.get("dashboard.refresh_interval", 1))
-            
+
     except WebSocketDisconnect:
         connected_clients.remove(websocket)
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error("WebSocket error: %s", e)
         if websocket in connected_clients:
             connected_clients.remove(websocket)
 
