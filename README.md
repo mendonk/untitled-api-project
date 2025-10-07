@@ -14,7 +14,7 @@ cd sample_api
 python start_api.py
 ```
 
-2. Install Dependencies
+2. Install dependencies.
 The monitoring application uses the dependencies from the main project's `requirements.txt`.
 ```bash
 cd /home/mk/Documents/GitHub/untitled-api-project
