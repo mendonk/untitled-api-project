@@ -1,0 +1,30 @@
+api:
+  base_url: "http://localhost:8000"
+  timeout: 10
+  endpoints:
+    - "/"
+    - "/health"
+    - "/regions"
+    - "/wines"
+    - "/search/wines"
+
+monitoring:
+  check_interval: 30
+  metrics_retention: 1000
+  alert_retention_days: 7
+
+monitoring_agent:
+  response_time_threshold: 2.0
+  error_rate_threshold: 0.05
+  anomaly_sensitivity: 2.0
+  baseline_window: 50
+
+dashboard:
+  refresh_interval: 1
+  max_alerts_display: 10
+  max_insights_display: 5
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "monitoring.log"
